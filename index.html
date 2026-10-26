@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sales Rep Workflow Form</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#14171c;--mu:#5d6673;--ac:#1f6feb;--acx:#fff;--bd:#d9dde3;--ok:#1a7f4b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101216;--card:#1a1d23;--tx:#eceff3;--mu:#9aa3af;--ac:#5b9dff;--acx:#0b1220;--bd:#2d323b;--ok:#4ad08a}}
+:root[data-theme="dark"]{--bg:#101216;--card:#1a1d23;--tx:#eceff3;--mu:#9aa3af;--ac:#5b9dff;--acx:#0b1220;--bd:#2d323b;--ok:#4ad08a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px 16px 48px}
+h1{font-size:1.4rem;margin:8px 0 4px}
+.sub{color:var(--mu);margin:0 0 16px;font-size:.95rem}
+.bar{height:6px;background:var(--bd);border-radius:3px;margin:0 0 16px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .2s}
+section{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+h2{font-size:1.05rem;margin:0 0 12px}
+.q{margin:0 0 18px}
+.q:last-child{margin-bottom:0}
+label.l{display:block;font-weight:600;margin-bottom:6px}
+.hint{color:var(--mu);font-size:.85rem;font-weight:400}
+select,textarea,input[type=text]{width:100%;font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:10px;padding:11px}
+textarea{min-height:90px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--bd);background:var(--bg);color:var(--tx);border-radius:999px;padding:9px 14px;font:inherit;cursor:pointer}
+.chip[aria-pressed=true]{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.row{display:grid;gap:6px;margin-bottom:12px}
+.row span{font-size:.95rem}
+button.go{width:100%;font:inherit;font-weight:600;padding:14px;border:0;border-radius:12px;background:var(--ac);color:var(--acx);cursor:pointer;margin-top:4px}
+button.alt{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+#out{display:none}
+#out textarea{min-height:200px;font-size:.85rem}
+.note{color:var(--ok);font-size:.9rem;min-height:1.2em;margin:8px 0 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Your Workday: Where Does the Time Go?</h1>
+<p class="sub">About 5 minutes. There are no wrong answers. Your answers save on this phone as you go.</p>
+<div class="bar"><i id="pb"></i></div>
+<form id="f" onsubmit="return false"></form>
+<div id="out">
+<section>
+<h2>All done. Thank you!</h2>
+<p class="sub">Tap below to send your answers back. If sharing doesn’t open, copy the text and paste it into a message.</p>
+<textarea id="sum" readonly></textarea>
+<button class="go" id="share">Share my answers</button>
+<button class="go alt" id="copy">Copy to clipboard</button>
+<p class="note" id="msg"></p>
+</section>
+</div>
+</main>
+<script>
+var TASKS=["Confirming an order shipped","Checking the right product was sent","Checking it went out on time","Giving ETAs to clients or job sites","Chasing invoices and due dates","Answering internal status requests","Answering “where’s my order?” calls and texts"];
+var LEVELS=["Not an issue","Some time","A lot of time","My biggest drain"];
+var AUTO=["Status check to the distribution center","ETA update to a customer","Invoice or due-date reminder","Internal email or request"];
+var AUTOOPT=["Send it automatically","Draft it, I approve","Just tell me","Never automate"];
+var S=[
+{t:"Your week",q:[
+{id:"hrs",k:"sel",l:"Hours per week on order and delivery follow-up (calls, texts, emails)",o:["Under 5","5 to 10","10 to 15","15 to 20","20+"]},
+{id:"jobs",k:"sel",l:"Jobs you’re tracking at once",o:["1 to 5","6 to 15","16 to 30","30+"]},
+{id:"who",k:"chips",l:"Who do you contact most?",o:["Distribution center","Inside sales","Logistics or warehouse","Customer or buyer","Job site foreman","Vendors or manufacturers","Accounting"]}]},
+{t:"What eats your time?",q:[{id:"tasks",k:"grid",l:"Rate each task",rows:TASKS,o:LEVELS}]},
+{t:"Where the information lives",q:[
+{id:"src",k:"chips",l:"Where do you find order, shipping and invoice info?",o:["Work email","Text messages","Graybar order system","Carrier tracking","Spreadsheets","Phone calls","Paper or notes","Other"]},
+{id:"vis",k:"sel",l:"Can you see order and tracking status yourself, or do you have to ask someone?",o:["I can see it myself","Some of it","I usually have to ask","Not sure"]},
+{id:"tools",k:"chips",l:"What does Graybar already give you for order tracking or customer notifications?",o:["Customer portal","Automatic order or shipping emails","Order status dashboard","Mobile app","Nothing, it’s mostly manual","Not sure"]},
+{id:"ai",k:"sel",l:"Do you have Copilot or any AI tool at work?",o:["Yes, and I use it","Yes, but I don’t use it","No","Not sure"]}]},
+{t:"What would you trust it with?",q:[{id:"auto",k:"grid",l:"If an assistant handled these, how should it work?",rows:AUTO,o:AUTOOPT}]},
+{t:"Your take",q:[
+{id:"dread",k:"txt",l:"What follow-up task do you dread most, or worry about dropping?"},
+{id:"cost",k:"txt",l:"What happens when an order is late or wrong? What does it cost you with the customer?"},
+{id:"done",k:"sel",l:"What would “done” look like for you?",o:["One daily summary","Instant alerts only for problems","A running log I can check anytime","A text when each task is handled"]},
+{id:"quiet",k:"txt",l:"Which messages must always come from you personally?"}]},
+{t:"Business reality",q:[
+{id:"rules",k:"sel",l:"Does Graybar allow outside tools to connect to your work email or phone?",o:["Yes, I checked","No","Not sure"]},
+{id:"peers",k:"sel",l:"Do other reps on your team deal with the same thing?",o:["Yes, most of them","A few","Just me","Not sure"]},
+{id:"pay",k:"sel",l:"If it reliably saved you hours a week, what would it be worth per month?",o:["Under $50","$50 to $100","$100 to $250","$250+","Not sure"]},
+{id:"more",k:"txt",l:"Anything else we should know?"}]}
+];
+var A={};try{A=JSON.parse(localStorage.getItem("rwf")||"{}")}catch(e){}
+function save(){try{localStorage.setItem("rwf",JSON.stringify(A))}catch(e){}prog()}
+function el(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt)e.textContent=txt;return e}
+function prog(){var n=0,t=0;S.forEach(function(s){s.q.forEach(function(q){if(q.k==="grid"){q.rows.forEach(function(r){t++;if(A[q.id+"|"+r])n++})}else{t++;var v=A[q.id];if(v&&v.length)n++}})});document.getElementById("pb").style.width=Math.round(100*n/t)+"%"}
+var f=document.getElementById("f");
+S.forEach(function(s){
+var sec=el("section");sec.appendChild(el("h2","",s.t));
+s.q.forEach(function(q){
+var d=el("div","q");var lb=el("label","l",q.l);d.appendChild(lb);
+if(q.k==="sel"){var se=el("select");se.appendChild(new Option("Choose one",""));q.o.forEach(function(o){se.appendChild(new Option(o,o))});se.value=A[q.id]||"";se.onchange=function(){A[q.id]=se.value;save()};d.appendChild(se)}
+else if(q.k==="txt"){var ta=el("textarea");ta.value=A[q.id]||"";ta.oninput=function(){A[q.id]=ta.value;save()};d.appendChild(ta)}
+else if(q.k==="chips"){lb.appendChild(el("span","hint"," (tap all that apply)"));var c=el("div","chips");A[q.id]=A[q.id]||[];q.o.forEach(function(o){var b=el("button","chip",o);b.type="button";b.setAttribute("aria-pressed",A[q.id].indexOf(o)>-1);b.onclick=function(){var i=A[q.id].indexOf(o);if(i>-1)A[q.id].splice(i,1);else A[q.id].push(o);b.setAttribute("aria-pressed",i<0);save()};c.appendChild(b)});d.appendChild(c)}
+else if(q.k==="grid"){q.rows.forEach(function(r){var rw=el("div","row");rw.appendChild(el("span","",r));var se=el("select");se.appendChild(new Option("Choose one",""));q.o.forEach(function(o){se.appendChild(new Option(o,o))});var key=q.id+"|"+r;se.value=A[key]||"";se.onchange=function(){A[key]=se.value;save()};rw.appendChild(se);d.appendChild(rw)})}
+sec.appendChild(d)});f.appendChild(sec)});
+var sub=el("button","go","Finish");sub.type="button";f.appendChild(sub);
+function summary(){var o="SALES REP WORKFLOW FORM\n";S.forEach(function(s){o+="\n== "+s.t+" ==\n";s.q.forEach(function(q){if(q.k==="grid"){o+=q.l+"\n";q.rows.forEach(function(r){o+="  - "+r+": "+(A[q.id+"|"+r]||"(skipped)")+"\n"})}else{var v=A[q.id];if(Array.isArray(v))v=v.join(", ");o+=q.l+"\n  "+(v||"(skipped)")+"\n"}})});return o}
+sub.onclick=function(){document.getElementById("sum").value=summary();document.getElementById("out").style.display="block";document.getElementById("out").scrollIntoView({behavior:"smooth"})};
+var msg=document.getElementById("msg");
+document.getElementById("share").onclick=function(){var t=document.getElementById("sum").value;if(navigator.share){navigator.share({title:"Workflow form answers",text:t}).catch(function(){})}else{msg.textContent="Sharing isn’t available here. Use Copy instead."}};
+document.getElementById("copy").onclick=function(){var ta=document.getElementById("sum");ta.select();var ok=false;try{ok=document.execCommand("copy")}catch(e){}
+if(navigator.clipboard){navigator.clipboard.writeText(ta.value).then(function(){msg.textContent="Copied. Paste it into a text or email."},function(){msg.textContent=ok?"Copied.":"Press and hold the text to copy it."})}else{msg.textContent=ok?"Copied. Paste it into a text or email.":"Press and hold the text to copy it."}};
+prog();
+</script>
+</body>
+</html>
